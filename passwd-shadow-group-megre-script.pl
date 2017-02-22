@@ -5,21 +5,21 @@
 use 5.010;
 use File::Copy qw(copy);
 
-open PASSWD, "</vagrant/mnt/etc/passwd" or die $!;
-open SHADOW, "</vagrant/mnt/etc/shadow" or die $!;
-open OPASSWD, "</unpacked/etc/passwd" or die $!;
-open OSHADOW, "</unpacked/etc/shadow" or die $!;
-open GROUP, "</vagrant/mnt/etc/group" or die $!;
-open OGROUP, "</unpacked/etc/group" or die $!;
+open PASSWD, "<$ARGV[1]/etc/passwd" or die $!;
+open SHADOW, "<$ARGV[1]/etc/shadow" or die $!;
+open GROUP, "<$ARGV[1]/etc/group" or die $!;
+open OPASSWD, "<$ARGV[0]/etc/passwd" or die $!;
+open OSHADOW, "<$ARGV[0]/etc/shadow" or die $!;
+open OGROUP, "<$ARGV[0]/etc/group" or die $!;
 
 # Create backups on the receiver
 
-copy "/vagrant/mnt/etc/passwd", "/vagrant/mnt/etc/passwd-receiver-orig" or die "Copy failed: $!";
-copy "/vagrant/mnt/etc/shadow", "/vagrant/mnt/etc/shadow-receiver-orig" or die "Copy failed: $!";
-copy "/vagrant/mnt/etc/group", "/vagrant/mnt/etc/group-receiver-orig" or die "Copy failed: $!";
-copy "/unpacked/etc/passwd", "/vagrant/mnt/etc/passwd-sender-orig" or die "Copy failed: $!";
-copy "/unpacked/etc/shadow", "/vagrant/mnt/etc/shadow-sender-orig" or die "Copy failed: $!";
-copy "/unpacked/etc/group", "/vagrant/mnt/etc/group-sender-orig" or die "Copy failed: $!";
+copy "$ARGV[1]/etc/passwd", "$ARGV[1]/etc/passwd-receiver-orig" or die "Copy failed: $!";
+copy "$ARGV[1]/etc/shadow", "$ARGV[1]/etc/shadow-receiver-orig" or die "Copy failed: $!";
+copy "$ARGV[1]/etc/group", "$ARGV[1]/etc/group-receiver-orig" or die "Copy failed: $!";
+copy "$ARGV[0]/etc/passwd", "$ARGV[1]/etc/passwd-sender-orig" or die "Copy failed: $!";
+copy "$ARGV[0]/etc/shadow", "$ARGV[1]/etc/shadow-sender-orig" or die "Copy failed: $!";
+copy "$ARGV[0]/etc/group", "$ARGV[1]/etc/group-sender-orig" or die "Copy failed: $!";
 
 # Read this hosts /etc/passwd into memory
 # nfsnobody:x:4294967294:4294967294:Anonymous NFS User:/var/lib/nfs:/dev/null
@@ -92,24 +92,24 @@ $shadowbuf = $shadowbuf . "$account:$THATSHADOW{$account}{passstring}:$THATSHADO
 print "$account: $THISHOST{$account}{pruid} = $THATHOST{$account}{pruid}\n";
 }
 if ((defined($THISHOST{$account})) && ($THISHOST{$account}{pruid} ne $THATHOST{$account}{pruid})) {
-$uiderrors = $uiderrors . "$account: Receiver: $THISHOST{$account}{pruid} Source: $THATHOST{$account}{pruid}\n";
+$uiderrors = $uiderrors . "$account: Source: $THATHOST{$account}{pruid} Receiver: $THISHOST{$account}{pruid}\n";
 
   if ( length $uidrsync > 0 ) {
   $uidrsync = $uidrsync . ",$THATHOST{$account}{pruid}:$THISHOST{$account}{pruid}";
   } else {
-  $gidrsync = "--usermap=" . $THATHOST{$account}{pruid} . ":" . $THISHOST{$account}{pruid};
+  $uidrsync = "--usermap=" . $THATHOST{$account}{pruid} . ":" . $THISHOST{$account}{pruid};
   }
 
 }
 if ((defined($THISHOST{$account})) && ($THISHOST{$account}{pguid} ne $THATHOST{$account}{pguid})) {
-$usergiderrors = $usergiderrors . "$account: Receiver: $THISHOST{$account}{pguid} Source: $THATHOST{$account}{pguid}\n";
+$usergiderrors = $usergiderrors . "$account: Source: $THATHOST{$account}{pguid} Receiver: $THISHOST{$account}{pguid}\n";
 }
 if ((defined($THISSHADOW{$account})) && ($THISSHADOW{$account}{passstring} ne $THATSHADOW{$account}{passstring})) {
-$passworderrors = $passworderrors . "$account: Receiver: $THISSHADOW{$account}{passstring} Source: $THATSHADOW{$account}{passstring}\n";
+$passworderrors = $passworderrors . "$account: Source: $THATSHADOW{$account}{passstring} Receiver: $THISSHADOW{$account}{passstring}\n";
 
 # A code which replaces the password hash in /etc/shadow file on the receiver host
-my $SHADOW = '/vagrant/mnt/etc/shadow';
-my $SHADOWTEMP = '/vagrant/mnt/etc/shadow-temp';
+my $SHADOW = "$ARGV[1]/etc/shadow";
+my $SHADOWTEMP = "$ARGV[1]/etc/shadow-temp";
 
 my $oldpassword = $THISSHADOW{$account}{passstring};
 my $newpassword = $THATSHADOW{$account}{passstring};
@@ -143,7 +143,7 @@ $groupbuf = $groupbuf . "$group:$THATGROUP{$group}{password}:$THATGROUP{$group}{
 print "$group: $THISGROUP{$group}{gid} = $THATGROUP{$group}{gid}\n";
 }
 if ((defined($THISGROUP{$group})) && ($THISGROUP{$group}{gid} ne $THATGROUP{$group}{gid})) {
-$giderrors = $giderrors . "$group: Receiver: $THISGROUP{$group}{gid} Source: $THATGROUP{$group}{gid}\n";
+$giderrors = $giderrors . "$group: Source: $THATGROUP{$group}{gid} Receiver: $THISGROUP{$group}{gid}\n";
 
   if ( length $gidrsync > 0 ) {
   $gidrsync = $gidrsync . ",$THATGROUP{$group}{gid}:$THISGROUP{$group}{gid}";
@@ -153,10 +153,10 @@ $giderrors = $giderrors . "$group: Receiver: $THISGROUP{$group}{gid} Source: $TH
 
 }
 if ((defined($THISGROUP{$group})) && ($THISGROUP{$group}{user_list} ne $THATGROUP{$group}{user_list})) {
-$userlisterrors = $userlisterrors . "$group: Receiver: $THISGROUP{$group}{user_list} Source: $THATGROUP{$group}{user_list}\n";
+$userlisterrors = $userlisterrors . "$group: Source: $THATGROUP{$group}{user_list} Receiver: $THISGROUP{$group}{user_list}\n";
 }
 if ((defined($THISGROUP{$group})) && ($THISGROUP{$group}{password} ne $THATGROUP{$group}{password})) {
-$grouppassworderrors = $grouppassworderrors . "$group: Receiver: $THISGROUP{$group}{password} Source: $THATGROUP{$group}{password}\n";
+$grouppassworderrors = $grouppassworderrors . "$group: Source: $THATGROUP{$group}{password} Receiver: $THISGROUP{$group}{password}\n";
 }
 }
 
@@ -166,7 +166,7 @@ print "Add to /etc/passwd\n";
 print "$passwdbuf\n";
 
 # A code which adds missing accounts to /etc/passwd on the receiver host
-my $PASSWD = '/vagrant/mnt/etc/passwd';
+my $PASSWD = "$ARGV[1]/etc/passwd";
 # my $PASSWD = 'passwd-temp';
 
 open my $wf, '>>'. $PASSWD or die "Cannot open $PASSWD for writing.";
@@ -181,20 +181,22 @@ print "Add to /etc/shadow\n";
 print "$shadowbuf\n";
 
 # A code which adds missing accounts to /etc/shadow on the receiver host
-my $SHADOW = '/vagrant/mnt/etc/shadow';
+my $SHADOW = "$ARGV[1]/etc/shadow";
 # my $SHADOW = 'shadow-temp';
 
+chmod 0600, $SHADOW or die "Couldn't change the permission to $SHADOW: $!";
 open my $wf, '>>'. $SHADOW or die "Cannot open $SHADOW for writing.";
 
 print $wf $shadowbuf;
 
 close $wf;
+chmod 0000, $SHADOW or die "Couldn't change the permission to $SHADOW: $!";
 
 # UID Mis-matches
 print "------------------\n";
 print "UID Mis-matches\n";
 print "$uiderrors";
-print "rsync parms: $uidrsync\n\n";
+print "rsync params: $uidrsync\n\n";
 
 # GID Mis-matches
 print "------------------\n";
@@ -212,7 +214,7 @@ print "Add to /etc/group\n";
 print "$groupbuf\n";
 
 # A code which adds missing groups to /etc/group on the receiver host
-my $GROUP = '/vagrant/mnt/etc/group';
+my $GROUP = "$ARGV[1]/etc/group";
 # my $GROUP = 'group-temp';
 
 open my $wf, '>>'. $GROUP or die "Cannot open $GROUP for writing.";
@@ -225,7 +227,7 @@ close $wf;
 print "------------------\n";
 print "GID Mis-matches\n";
 print "$giderrors";
-print "rsync parms: $gidrsync\n\n";
+print "rsync params: $gidrsync\n\n";
 
 # user_list Mis-matches
 print "------------------\n";
@@ -236,3 +238,8 @@ print "$userlisterrors\n";
 print "------------------\n";
 print "Group password Mis-matches\n";
 print "$grouppassworderrors\n";
+
+# Resulting rsync string
+print "------------------\n";
+print "Resulting rsync string:\n";
+print "rsync -aSHvx --numeric-ids $uidrsync $gidrsync --exclude-from=\"exclude.txt\" $ARGV[0]/ $ARGV[1]/\n";
