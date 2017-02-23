@@ -242,4 +242,4 @@ print "$grouppassworderrors\n";
 # Resulting rsync string
 print "------------------\n";
 print "Resulting rsync string:\n";
-print "rsync -aSHvx --numeric-ids $uidrsync $gidrsync --exclude-from=\"exclude.txt\" $ARGV[0]/ $ARGV[1]/\n";
+print "rsync -aSHPvz --numeric-ids $uidrsync $gidrsync --exclude-from=\"exclude.txt\" $ARGV[0]/ $ARGV[1]/\n";
