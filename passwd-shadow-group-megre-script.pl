@@ -111,8 +111,8 @@ $passworderrors = $passworderrors . "$account: Source: $THATSHADOW{$account}{pas
 my $SHADOW = "$ARGV[1]/etc/shadow";
 my $SHADOWTEMP = "$ARGV[1]/etc/shadow-temp";
 
-my $oldpassword = $THISSHADOW{$account}{passstring};
-my $newpassword = $THATSHADOW{$account}{passstring};
+my $oldpassword = quotemeta($THISSHADOW{$account}{passstring});
+my $newpassword = quotemeta($THATSHADOW{$account}{passstring});
 
 chmod 0600, $SHADOW or die "Couldn't change the permission to $SHADOW: $!";
 open my $rf, '<', $SHADOW or die "Cannot open $SHADOW for reading.";
